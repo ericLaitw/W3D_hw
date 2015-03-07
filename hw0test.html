@@ -28,8 +28,8 @@
 </head>
 
 <body>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/three.js/r70/three.min.js"></script>
-<script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js">
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js">
 </script>
 
 <script>
@@ -53,15 +53,15 @@ function init()
 
 	scene = new THREE.Scene();
 	
-	cube = new THREE.Mesh (new THREE.BoxGeometry (20,5,8),
-							new THREE.MeshLambertMaterial ({color: 0x1ec876}));
+	cube = new THREE.Mesh (new THREE.BoxGeometry (40,50,60),
+							new THREE.MeshLambertMaterial ({color: 0xffffff}));
 
 	cube.position.set (75, 0, 0);
 	scene.add (cube);
 
 	camera = new THREE.PerspectiveCamera (45, width/height, 1, 10000);
-	camera.position.y = 160;
-	camera.position.z = 400;
+	camera.position.y = 400;
+	camera.position.z = 160;
 	camera.lookAt (new THREE.Vector3(0,0,0));
 
 	controls = new THREE.OrbitControls (camera, renderer.domElement);
