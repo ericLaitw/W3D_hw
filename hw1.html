@@ -78,16 +78,11 @@ function init() {
 		map		: THREE.ImageUtils.loadTexture('images/moonmap.jpg'),
         wireframe: true
     }));
-	//STAR
-	star = new THREE.Mesh(new THREE.SphereGeometry(1000, 32, 32),
-    new THREE.MeshBasicMaterial({
-		map		: THREE.ImageUtils.loadTexture('images/star.png'),
-        wireframe: true
-    }));	
+	
     earth.add(moon);
     sun.add(earth);
     scene.add(sun);
-	scene.add(star);
+	
 
     var gridXZ = new THREE.GridHelper(100, 10);
     gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
