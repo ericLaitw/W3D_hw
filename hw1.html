@@ -143,7 +143,7 @@ function render() {
     angle = clock.getElapsedTime();
 
     earth.position.set(80 * Math.cos(angle), 0, -80 * Math.sin(angle));
-    earth.rotation.y = angle;
+    earth.rotation.y = 2 * angle //係數為一周自轉圈數
 
     angle2 = angle * 2;
     moon.position.set(20 * Math.cos(angle2), 0, -20 * Math.sin(angle2));
