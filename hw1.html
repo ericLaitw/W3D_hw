@@ -17,6 +17,8 @@
 
 <div id = "info"> 
      BGM (<a href="javascript:toggle();">dimmer</a>)
+	 <br>
+	 Press "Z" to pause the animation
 </div>
 
 <audio id="soundtrack" autoplay loop style="display:none">
@@ -24,13 +26,13 @@
 </audio>
 
 <script src="js/three.min.js"></script>
-<script src="js/OrbitControls.js">
-</script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/KeyboardState.js"></script>
 
 <script>
 
 var camera, scene, sceneBack, cameraBack, renderer, sun, earth, angle = 0,
-    clock, control;
+    clock, control, turn = true, keyboard = new KeyboardState(), angletemp = -1;
 	
 var soundTrack, soundVal = 1.0, sign = 1.0, isPaused = false;
 	
@@ -41,6 +43,11 @@ function toggle() {
 	isPaused = !isPaused;
 	sign = isPaused ? -1 : 1;
 	console.log (isPaused);
+}
+
+function toggleTurn ()
+{
+	turn = !turn;
 }
 
 function init() {
@@ -134,21 +141,48 @@ function animate() {
 	soundVal += sign*0.01;
 	soundVal = THREE.Math.clamp (soundVal, 0, 1);
 	soundtrack.volume = soundVal;
-    control.update();
+    //control.update();
+
     requestAnimationFrame(animate);
     render();
+	update();
+}
+
+function update()
+{
+	keyboard.update();
+	control.update();
+	// console.log ("angle: " + angle);  print to console
+	if ( keyboard.down("Z"))  // yes, must use UPPER CASE
+		toggleTurn();         
 }
 
 function render() {
-    angle = clock.getElapsedTime();
+    var dt = clock.getDelta()/100; //公轉速度
+	if(angle < angletemp)
+		angle = angletemp;
+	else
+		angle += dt;
+	
+	if(turn)
+	{
+		angletemp = angle;
+		earth.position.set(80 * Math.cos(angle), 0, -80 * Math.sin(angle));
+		earth.rotation.y = 365 * angle //係數為一周自轉圈數
+	}
 
-    earth.position.set(80 * Math.cos(angle), 0, -80 * Math.sin(angle));
-    earth.rotation.y = 2 * angle //係數為一周自轉圈數
-
-    angle2 = angle * 2;
-    moon.position.set(20 * Math.cos(angle2), 0, -20 * Math.sin(angle2));
-    moon.rotation.y = angle2;
-
+	if(!turn)
+		angle -= dt;
+    
+	angle2 = angle * 11; //月球公轉
+	if(turn)
+	{
+		moon.position.set(20 * Math.cos(angle2 - earth.rotation.y), 0, -20 * Math.sin(angle2 - earth.rotation.y));
+		moon.rotation.y = angle2 - earth.rotation.y;
+	}
+	/*if(!turn)
+		angle = dt;*/
+	
 	renderer.clear();
     renderer.render(sceneBack, cameraBack);
     renderer.render(scene, camera);
