@@ -42,7 +42,6 @@ animate();
 function toggle() {
 	isPaused = !isPaused;
 	sign = isPaused ? -1 : 1;
-	console.log (isPaused);
 }
 
 function toggleTurn ()
@@ -51,26 +50,25 @@ function toggleTurn ()
 }
 
 function init() {
-	/////////////////////////////////////////////
+	//background
     sceneBack = new THREE.Scene();
     cameraBack = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 100);
     cameraBack.position.z = 5;
     cameraBack.lookAt(new THREE.Vector3(0, 0, 0));
 
-    //THREE.ImageUtils.crossOrigin = '';
     var texture = THREE.ImageUtils.loadTexture('images/galaxy3.jpg');
 
     var back = new THREE.Mesh(new THREE.PlaneGeometry(20, 20),
     new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true,
-        opacity: 0.75
+        opacity: 0.85
     }));
     back.material.depthTest = false;
     back.material.depthWrite = false;
     sceneBack.add(back);
 
-    ////////////////////////////////////////////////
+ 
 
 
 
@@ -85,39 +83,29 @@ function init() {
     sun = new THREE.Mesh(new THREE.SphereGeometry(30, 256, 256),
     new THREE.MeshBasicMaterial({
 		map		: THREE.ImageUtils.loadTexture('images/sunmap2.jpg'),
-        wireframe: true
     }));
 	//EARTH
-	/*var material	= new THREE.MeshPhongMaterial({
+	var material	= new THREE.MeshPhongMaterial({
 		map		: THREE.ImageUtils.loadTexture('images/earthmap.jpg'),
 		bumpMap		: THREE.ImageUtils.loadTexture('images/earthbump.jpg'),
 		bumpScale	: 0.05,
-		specularMap	: THREE.ImageUtils.loadTexture('images/earthspec.jpg'),
-		specular	: new THREE.Color('grey'),
-	});*/
-    earth = new THREE.Mesh(new THREE.SphereGeometry(10, 128, 128),
-    new THREE.MeshBasicMaterial({
-		map		: THREE.ImageUtils.loadTexture('images/earthmap.jpg'),
-        wireframe: true
-    }));
+	});
+	earth = new THREE.Mesh(new THREE.SphereGeometry(10, 128, 128), material);
+ 
 	//MOON
-    moon = new THREE.Mesh(new THREE.SphereGeometry(5, 128, 128),
-    new THREE.MeshBasicMaterial({
+	var material	= new THREE.MeshPhongMaterial({
 		map		: THREE.ImageUtils.loadTexture('images/moonmap.jpg'),
-        wireframe: true
-    }));
+	});
+	moon = new THREE.Mesh(new THREE.SphereGeometry(5, 128, 128), material);
+    
 	
     earth.add(moon);
     sun.add(earth);
     scene.add(sun);
 	
 
-    /*var gridXZ = new THREE.GridHelper(100, 10);
-    gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
-    scene.add(gridXZ);*/
-
     light = new THREE.PointLight(0xffffff);
-    light.position.set(100, 300, 200);
+    light.position.set(0, 0, 0);
     scene.add(light);
 
     renderer = new THREE.WebGLRenderer();
@@ -141,7 +129,7 @@ function animate() {
 	soundVal += sign*0.01;
 	soundVal = THREE.Math.clamp (soundVal, 0, 1);
 	soundtrack.volume = soundVal;
-    //control.update();
+  
 
     requestAnimationFrame(animate);
     render();
@@ -152,13 +140,12 @@ function update()
 {
 	keyboard.update();
 	control.update();
-	// console.log ("angle: " + angle);  print to console
-	if ( keyboard.down("Z"))  // yes, must use UPPER CASE
+	if ( keyboard.down("Z"))  
 		toggleTurn();         
 }
 
 function render() {
-    var dt = clock.getDelta()/100; //公轉速度
+    var dt = clock.getDelta()/100; 
 	if(angle < angletemp)
 		angle = angletemp;
 	else
@@ -168,20 +155,19 @@ function render() {
 	{
 		angletemp = angle;
 		earth.position.set(80 * Math.cos(angle), 0, -80 * Math.sin(angle));
-		earth.rotation.y = 365 * angle //係數為一周自轉圈數
+		earth.rotation.y = 365 * angle;
 	}
 
 	if(!turn)
 		angle -= dt;
     
-	angle2 = angle * 11; //月球公轉
+	angle2 = angle * 11; 
 	if(turn)
 	{
 		moon.position.set(20 * Math.cos(angle2 - earth.rotation.y), 0, -20 * Math.sin(angle2 - earth.rotation.y));
 		moon.rotation.y = angle2 - earth.rotation.y;
 	}
-	/*if(!turn)
-		angle = dt;*/
+	
 	
 	renderer.clear();
     renderer.render(sceneBack, cameraBack);
