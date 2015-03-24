@@ -76,14 +76,21 @@ function init() {
 		bumpMap		: THREE.ImageUtils.loadTexture('images/woodbump.jpg'),
 		bumpScale	: 0.5,
 	});*/
+	//pivot
 	var cubeGeometry = new THREE.CylinderGeometry (1, 1, 20, 100);
-	var cubeMaterial = new THREE.MeshLambertMaterial ({color: 0x1ec876});
+	var cubeMaterial = new THREE.MeshPhongMaterial({
+		map		: THREE.ImageUtils.loadTexture('images/metal.jpg')
+	});
 	//喇叭鎖柱
 	var lockGeometry = new THREE.CylinderGeometry (3, 3, 5, 100);
-	var lockMaterial = new THREE.MeshLambertMaterial ({color: 0x1ec876});
+	var lockMaterial = new THREE.MeshPhongMaterial({
+		map		: THREE.ImageUtils.loadTexture('images/metal.jpg')
+	});
 	//喇叭鎖球
 	var lockGeometry2 = new THREE.SphereGeometry(5, 256, 256);
-	var lockMaterial2 = new THREE.MeshLambertMaterial ({color: 0x1ec876});
+	var lockMaterial2 = new THREE.MeshPhongMaterial({
+		map		: THREE.ImageUtils.loadTexture('images/metal.jpg')
+	});
 	
     var mesh = new THREE.Mesh(columnGeom, material);
     var mesh2 = mesh.clone();
@@ -179,7 +186,9 @@ function render()
 		check = frame.rotation.y;
 	}*/
 	if(angle == Math.PI && !turn && check == true)
+	{
 		opendoorsounds.play();
+	}
 	if(angle == Math.PI && turn && check == true)
 	{
 		closedoorsounds.play();
