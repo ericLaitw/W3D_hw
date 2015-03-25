@@ -67,7 +67,7 @@ function init() {
 
     columnGeom = new THREE.BoxGeometry(10, 150, 10);
     platformGeom = new THREE.BoxGeometry(90, 10, 10);
-	door = new THREE.BoxGeometry(88, 130, 5);
+	door = new THREE.BoxGeometry(88+2, 130, 5);
 	var material = new THREE.MeshPhongMaterial({
 		map		: THREE.ImageUtils.loadTexture('images/wood.jpg'),
 		bumpMap		: THREE.ImageUtils.loadTexture('images/woodbump.jpg'),
@@ -105,20 +105,25 @@ function init() {
 	mesh3.position.set(55, 145, -5);
 	var cubemesh = new THREE.Mesh (cubeGeometry, cubeMaterial);
 	var cubemesh2= cubemesh.clone();
-	cubemesh.position.set(99, 25, -5);
-	cubemesh2.position.set(99, 25 + 100, -5);
+	cubemesh.position.set(99, 25, -5+5);
+	cubemesh2.position.set(99, 25 + 100, -5+5);
 	//door
 	doormesh = new THREE.Mesh(door , material);
 	//doormesh.position.set(-45, 50, 0);
 	
-	//喇叭鎖柱
+	//喇叭鎖柱1
 	lockmesh = new THREE.Mesh (lockGeometry, lockMaterial);
 	lockmesh.rotation.x = Math.PI / 2;
 	//lockmesh.position.set(-35, 0, 4);
 	
-	//喇叭鎖球
+	//喇叭鎖球1
 	lockmesh2 = new THREE.Mesh (lockGeometry2, lockMaterial2);
 	//lockmesh2.position.set(0, 5, 0);
+	//喇叭鎖柱2
+	lockmesh3 = lockmesh.clone();
+	lockmesh3.rotation.x = Math.PI / 2;
+	//喇叭鎖球2
+	lockmesh4 = lockmesh2.clone();
 	
     frame.add(mesh);
     frame.add(mesh1);
@@ -129,10 +134,15 @@ function init() {
 	cubemesh.add(doormesh);
 	doormesh.add(lockmesh);
 	lockmesh.add(lockmesh2);
+	doormesh.add(lockmesh3);
+	lockmesh3.add(lockmesh4);
 
     light = new THREE.PointLight(0x888888);
     light.position.set(100, 300, 200);
+	light2 = new THREE.PointLight(0x888888);
+	light2.position.set(100, 300, -200);
     scene.add(light);
+	scene.add(light2);
 	
 	
     var gridXZ = new THREE.GridHelper(100, 10);
@@ -218,11 +228,13 @@ function render()
 		check = false;
 	*/
 	doormesh.rotation.y = angle;
-	doormesh.position.set( 45*Math.cos(angle) , 50, -45*Math.sin(angle));
+	doormesh.position.set( 45*Math.cos(angle)+1 , 50, -45*Math.sin(angle)-5);
 	//+45*Math.cos(angle)
 	//-45*Math.sin(angle)
 	lockmesh.position.set(35, 0, -4);
 	lockmesh2.position.set(0, -5, 0);
+	lockmesh3.position.set(35, 0, 4);
+	lockmesh4.position.set(0, 5, 0);
     renderer.render(scene, camera);
 }
 
