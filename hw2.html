@@ -16,7 +16,9 @@
 <body>
 
 <div id = "info"> 
-	 Press "Z" to open/close the door
+	 open/close the door
+	 <br>
+	 (<a href="javascript:toggleTurn();">toggle</a>)
 </div>
 
 <audio id="opendoor" style="display:none">
@@ -45,6 +47,7 @@ animate();
 function toggleTurn ()
 {
 	turn = !turn;
+	check = true; //檢查是否初始狀態
 }
 
 function init() {
@@ -167,7 +170,7 @@ function onWindowResize()
 }
 
 
-function update()
+/*function update()
 {
 	keyboard.update();
 	control.update();
@@ -176,7 +179,7 @@ function update()
 		toggleTurn();
 		check = true; //檢查是否初始狀態
 	}
-}
+}*/
 
 function render() 
 {
