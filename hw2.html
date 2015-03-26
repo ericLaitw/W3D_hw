@@ -31,14 +31,13 @@
 
 <script src="js/three.min.js"></script>
 <script src="js/OrbitControls.js"></script>
-<script src="js/KeyboardState.js"></script>
 
 <script>
 
 var camera, scene, renderer, light, controls, angle = Math.PI, clock;
 var frame;
 var doormesh, lockmesh, lockmesh2, opendoorsounds, closedoorsounds;
-var check = 0, turn = true, keyboard = new KeyboardState();	
+var check = 0, turn = true;	
 	
 init();
 animate();
@@ -59,7 +58,7 @@ function init() {
 	closedoorsounds = document.getElementById ('closedoor');
 	
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
-    camera.position.z = 500;
+    camera.position.z = 400;
     scene.add(camera);
 
     frame = new THREE.Object3D();
@@ -73,12 +72,6 @@ function init() {
 		bumpMap		: THREE.ImageUtils.loadTexture('images/woodbump.png'),
 		bumpScale	: 0.5,
 	});
-    //material = new THREE.MeshLambertMaterial();
-	/*var doormaterial = new THREE.MeshPhongMaterial({
-		map		: THREE.ImageUtils.loadTexture('images/wood.jpg'),
-		bumpMap		: THREE.ImageUtils.loadTexture('images/woodbump.jpg'),
-		bumpScale	: 0.5,
-	});*/
 	//pivot
 	var cubeGeometry = new THREE.CylinderGeometry (1, 1, 20, 100);
 	var cubeMaterial = new THREE.MeshPhongMaterial({
@@ -109,16 +102,11 @@ function init() {
 	cubemesh2.position.set(99, 25 + 100, -5+5);
 	//door
 	doormesh = new THREE.Mesh(door , material);
-	//doormesh.position.set(-45, 50, 0);
-	
 	//喇叭鎖柱1
 	lockmesh = new THREE.Mesh (lockGeometry, lockMaterial);
 	lockmesh.rotation.x = Math.PI / 2;
-	//lockmesh.position.set(-35, 0, 4);
-	
 	//喇叭鎖球1
 	lockmesh2 = new THREE.Mesh (lockGeometry2, lockMaterial2);
-	//lockmesh2.position.set(0, 5, 0);
 	//喇叭鎖柱2
 	lockmesh3 = lockmesh.clone();
 	lockmesh3.rotation.x = Math.PI / 2;
@@ -164,10 +152,8 @@ function init() {
 }
 
 function animate() {
-    //controls.update();
     requestAnimationFrame(animate);
     render();
-	update();
 }
 
 
@@ -180,24 +166,9 @@ function onWindowResize()
 }
 
 
-/*function update()
-{
-	keyboard.update();
-	control.update();
-	if(keyboard.down("Z"))
-	{
-		toggleTurn();
-		check = true; //檢查是否初始狀態
-	}
-}*/
-
 function render() 
 {
-	/*if(check < Math.PI)
-	{
-		frame.rotation.y += 0.05;
-		check = frame.rotation.y;
-	}*/
+
 	if(angle == Math.PI && !turn && check == true)
 	{
 		opendoorsounds.play();
@@ -220,17 +191,10 @@ function render()
 		if(angle < Math.PI)
 			angle = Math.PI;
 	}
-	/*if(angle == Math.PI && !turn && check == 1)
-		opendoorsounds.play();
-	if(angle == Math.PI && turn && check == true)
-	{
-		closedoorsounds.play();
-		check = false;
-	*/
+
 	doormesh.rotation.y = angle;
 	doormesh.position.set( 45*Math.cos(angle)+1 , 50, -45*Math.sin(angle)-5);
-	//+45*Math.cos(angle)
-	//-45*Math.sin(angle)
+
 	lockmesh.position.set(35, 0, -4);
 	lockmesh2.position.set(0, -5, 0);
 	lockmesh3.position.set(35, 0, 4);
