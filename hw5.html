@@ -25,6 +25,22 @@
 body {
     overflow: auto;
 }
+#save {
+    background: pink;
+}
+#openselect {
+    background:yellow;
+}
+#showresult {
+    width:98%;
+    height: 300px;
+    background:cyan;
+}
+#showresult {
+    width:98%;
+    height: 300px;
+    background:cyan;
+}
 </style>
 </head>
 
@@ -55,6 +71,11 @@ body {
 <button id="pickBtn">
         Which Now
 </button>
+<button id="save">
+		Data save
+</button>
+<input type="file" id="openselect" />
+<textarea id="showresult"></textarea>
 </br>
 <p class='fl'>
     Click the images to set the texture to the plane model.
@@ -82,6 +103,7 @@ var tex1, tex2;
 var mesh2, mesh3, box2, box3;
 var pickables = [];
 var container;
+var openbtn, saveBtn, showout;
 init();
 animate();
 
@@ -96,6 +118,13 @@ $("#getValueBtn").click(function(){
 });*/
 
 function init() {
+	
+	openbtn = document.getElementById("openselect");
+    saveBtn = document.getElementById("save");
+    showout = document.getElementById("showresult");
+	openselect.addEventListener("change", doOpen, false);
+	saveBtn.addEventListener("click", doSave, false);
+	
 
     theCanvas = document.getElementById("cnvs");
     theCanvasFrame = document.getElementById("cnvsFrame");
@@ -215,11 +244,13 @@ function init() {
 		 object.traverse( function ( child ) {
 			if ( child instanceof THREE.Mesh ) {
 				child.material.map = texture;
+				child.castShadow = true;
 				}
 		} );
 		object.position.set(0, 0, 200);
 		object.rotation.y = Math.PI;
 		//object.scale.set(2, 2, 2);
+		//var intersects = raycaster.intersectObjects( object, true );
 		object.castShadow = true; 
 		scene.add(object);
 	});
@@ -228,11 +259,10 @@ function init() {
 	var loader2 = new THREE.OBJMTLLoader();
 	loader2.load ('models/Natuzzi Wisdom.obj', 'models/Natuzzi Wisdom.mtl', 
 		function (object) {
-			lamp = object;
-			lamp.scale.set(0.15, 0.15, 0.15);
-			lamp.castShadow = true;
-			scene.add( lamp );
-			lamp.position.set(250, 0, 250);
+			object.traverse( function( node ) { if ( node instanceof THREE.Mesh ) { node.castShadow = true; } } );
+			object.scale.set(0.15, 0.15, 0.15);
+			scene.add( object );
+			object.position.set(250, 0, 250);
     } );
 
 	//////////////////////////////////////////////////////
@@ -244,9 +274,10 @@ function init() {
     var ground = new THREE.Mesh(
     new THREE.PlaneGeometry(2000, 2000),
     new THREE.MeshLambertMaterial({
-		map		: THREE.ImageUtils.loadTexture('images/wood.jpg'),
+		map		: THREE.ImageUtils.loadTexture('images/clearwood.jpg'),
+		side: THREE.DoubleSide,
 	}));
-    ground.rotation.x = -Math.PI / 2;
+    ground.rotation.x = Math.PI / 2;
     scene.add(ground);
 	
 	//light
@@ -259,12 +290,13 @@ function init() {
     spotLight.shadowMapWidth = 4096;
     spotLight.shadowMapHeight = 4096;
 
-    spotLight.shadowCameraNear = 5;
+    spotLight.shadowCameraNear = 1;
     spotLight.shadowCameraFar = 4000;
     spotLight.shadowCameraFov = spotLight.angle / Math.PI * 180;
 
-    /*spotLight.exponent = 20;
-    spotLight.target = tire;*/
+    spotLight.exponent = 20;
+    spotLight.target = ground;
+	spotLight.shadowCameraVisible = true;
     scene.add(spotLight);
 	/*light = new THREE.SpotLight( 0xffffff, 1.5 );
 	light.position.set( 0, 1000, 500 );
@@ -286,9 +318,14 @@ function init() {
 	wall1.castShadow = true; 
 	wall2.castShadow = true; 
 	wall3.castShadow = true; 
+	/*object.castShadow = true; 
+	lamp.castShadow = true;*/
 	
 	renderer.shadowMapEnabled = true;
 	renderer.shadowMapType = THREE.PCFShadowMap;
+	
+	var ambientLight = new THREE.AmbientLight (0x111111);
+	scene.add(ambientLight);
 	
     /*var gridXZ = new THREE.GridHelper(100, 10);
     gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
@@ -356,6 +393,37 @@ function pick(){
 	else
 		alert("Now Picking: Frame" + tmp);
 }
+function doOpen(evt) {
+    var files = evt.target.files;
+    var reader = new FileReader();
+    reader.onload = function () {
+        showout.value = this.result;
+        // alert(this.result);
+    };
+    reader.readAsText(files[0]);
+    // https://developer.mozilla.org/en-US/docs/Web/API/Blob
+    // start reading contents of the Blob,
+    // once finished, the 'result' contains the content
+    // of the file as a text string
+}
+function doSave() {
+    var filename = prompt("File? ", "data.txt");
+	var test = 100;
+    var string = new Array(6);
+    string[0] = "Frame1: ";
+    string[1] = test;
+    string[2] = ", Frame2: ";
+    string[3] = test;
+    string[4] = ", Frame3: ";
+    string[5] = test;
+    string.join(" ");
+  
+    var blob = new Blob([string], {
+        type: "text/plain;charset=utf-8"
+    });
+    saveAs(blob, filename);
+}
+
 // remember "no warp in <body>"
 //
 function tst(which) {
