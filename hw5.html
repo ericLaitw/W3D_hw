@@ -3,7 +3,7 @@
 <head>
 <style>
 #container {
-    width:60%;
+    width:75%;
     float:left;
     background-color:pink;
    margin-top: 5px;
@@ -20,13 +20,10 @@
 .flc {
     float:right;
     margin:5px;
-    width:19%;
+    width:20%;
 }
 body {
     overflow: auto;
-}
-#save {
-    background: pink;
 }
 #openselect {
     background:yellow;
@@ -36,20 +33,6 @@ body {
 </head>
 
 <body>
-
-
-<div id="container">
-<div id="cnvsFrame">
-    <canvas id="cnvs"> </canvas>
-</div>
-</div>
-
-    <img src="images/1.jpg" class="flc" onclick="javascript:tst(1);" />
-    <img src="images/2.jpg" class="flc" onclick="javascript:tst(2);" />
-	<img src="images/3.jpg" class="flc" onclick="javascript:tst(3);" />
-	<img src="images/4.jpg" class="flc" onclick="javascript:tst(4);" />
-<div style="clear:both"></div>
-<hr>
 <button id="setValueBtn">
         Save
 </button>
@@ -66,16 +49,29 @@ body {
 		Data save
 </button>
 <input type="file" id="openselect" />
-<textarea id="showresult"></textarea>
+<hr>
+<div id="container">
+<div id="cnvsFrame">
+    <canvas id="cnvs"> </canvas>
+</div>
+</div>
+
+    <img src="images/1.jpg" class="flc" onclick="javascript:tst(1);" />
+    <img src="images/2.jpg" class="flc" onclick="javascript:tst(2);" />
+	<img src="images/3.jpg" class="flc" onclick="javascript:tst(3);" />
+	<img src="images/4.jpg" class="flc" onclick="javascript:tst(4);" />
+<div style="clear:both"></div>
+
 </br>
+<hr>
 <p class='fl'>
-    Click the images to set the texture to the plane model.
-</p>
-    
-<p class="fl">
-how to control
-</p>
-<p class="fl"> only save the frame has picture 
+	HOW TO USE :
+	<br>
+	1.Click the frame you want to set the texture to.(frame1:middle, frame2:left, frame3:right)
+	<br>
+    2.Click the images to set the texture to the canvas.
+	<br>
+	3.You can save your setting by "Save", reload your setting by "Load", clear your setting by "Clear", checkout which frame by "Which Now", get text with your setting by "Data save".
 </p>
 
 <script src="js/three.min.js"></script>
@@ -288,7 +284,7 @@ function init() {
 
     spotLight.exponent = 20;
     spotLight.target = ground;
-	spotLight.shadowCameraVisible = true;
+	//spotLight.shadowCameraVisible = true;
     scene.add(spotLight);
 	/*light = new THREE.SpotLight( 0xffffff, 1.5 );
 	light.position.set( 0, 1000, 500 );
@@ -416,22 +412,26 @@ function doOpen() {
     // of the file as a text string
 }
 function doSave() {
-    var filename = prompt("File? ", "data.txt");
-
-    var string = new Array(6);
-    string[0] = "Frame1: ";
-    string[1] = set1;
-    string[2] = ", Frame2: ";
-    string[3] = set2;
-    string[4] = ", Frame3: ";
-    string[5] = set3;
-    //string.join('+');
-    var cstring = Array.prototype.join.call(string, "");
     
-    var blob = new Blob([cstring], {
-        type: "text/plain;charset=utf-8"
-    });
-    saveAs(blob, filename);
+
+	if(set1 == 0 || set2 == 0 || set3 == 0)
+		alert("Some frame do not have picture!");
+	else{
+		var filename = prompt("File? ", "data.txt");
+		var string = new Array(6);
+		string[0] = "Frame1: ";
+		string[1] = set1;
+		string[2] = ", Frame2: ";
+		string[3] = set2;
+		string[4] = ", Frame3: ";
+		string[5] = set3;
+		var cstring = Array.prototype.join.call(string, "");
+		
+		var blob = new Blob([cstring], {
+			type: "text/plain;charset=utf-8"
+		});
+		saveAs(blob, filename);
+	}
 }
 
 // remember "no warp in <body>"
