@@ -314,7 +314,7 @@ function init() {
 	
 	var ambientLight = new THREE.AmbientLight (0x111111);
 	scene.add(ambientLight);
-	
+
     /*var gridXZ = new THREE.GridHelper(100, 10);
     gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
     scene.add(gridXZ);*/
@@ -610,15 +610,18 @@ function onDocumentMouseDown(event) {
 
 function onDocumentMouseMove(event) {
     event.preventDefault();
-    mouse.x = ( event.clientX / theCanvasFrame.clientWidth ) * 2 - 1;
-    mouse.y = -( event.clientY / theCanvasFrame.clientHeight ) * 2 + 1;
+    /*mouse.x = ( event.clientX / theCanvasFrame.clientWidth ) * 2 - 1;
+    mouse.y = -( event.clientY / theCanvasFrame.clientHeight ) * 2 + 1;*/
     //
+	mouse.x = ( event.pageX / theCanvasFrame.clientWidth ) * 2 - 1;
+    mouse.y = -( (event.pageY - 60)  / theCanvasFrame.clientHeight ) * 2 + 1;
     var vector = new THREE.Vector3( mouse.x, mouse.y, 1 ).unproject( camera );
     raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
     var intersects = raycaster.intersectObjects( pickables );
 
     if ( intersects.length > 0 ) {
 		document.body.style.cursor = 'pointer';
+		debugger;
     } else {
         document.body.style.cursor = 'auto';
     }
