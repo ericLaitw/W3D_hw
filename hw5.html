@@ -613,8 +613,8 @@ function onDocumentMouseMove(event) {
     /*mouse.x = ( event.clientX / theCanvasFrame.clientWidth ) * 2 - 1;
     mouse.y = -( event.clientY / theCanvasFrame.clientHeight ) * 2 + 1;*/
     //
-	mouse.x = ( event.pageX / theCanvasFrame.clientWidth ) * 2 - 1;
-    mouse.y = -( (event.pageY - 60)  / theCanvasFrame.clientHeight ) * 2 + 1;
+	mouse.x = ( (event.clientX) / theCanvasFrame.clientWidth ) * 2 - 1;
+    mouse.y = -( (event.clientY - 60)  / theCanvasFrame.clientHeight ) * 2 + 1;
     var vector = new THREE.Vector3( mouse.x, mouse.y, 1 ).unproject( camera );
     raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
     var intersects = raycaster.intersectObjects( pickables );
