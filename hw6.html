@@ -77,10 +77,7 @@ animate();
 
 function init() {
 	// create and start the renderer; choose antialias setting.
-	if ( Detector.webgl )
-		renderer = new THREE.WebGLRenderer( {antialias:true} );
-	else
-		renderer = new THREE.CanvasRenderer(); 	
+	renderer = new THREE.WebGLRenderer( {antialias:true} );
 
 	renderer.setSize (window.innerWidth, window.innerHeight);
 	document.body.appendChild (renderer.domElement);
@@ -115,6 +112,9 @@ function init() {
 				});
 
 		mesh = new THREE.MorphAnimMesh(geometry, mat);
+		
+		mesh.rotation.y = Math.PI / 2;
+		
 		mesh.parseAnimations();
 
 		mesh.playAnimation('run', 10);
@@ -170,7 +170,8 @@ function init() {
     });
     quad = new THREE.Mesh(plane, rttmaterial);
     quad.position.set(0, 20, 0);
-    scene.add(quad);
+    //scene.add(quad);
+	quad.rotation.y = Math.PI;
 	
 	for (var i = -2; i <= 2; i++)
     for (var j = -2; j <= 2; j++) {
@@ -239,9 +240,9 @@ function animate() {
 	controls.update();
     /*angle += 0.02;
     if (monkey !== undefined) monkey.rotation.y = angle;*/
-	rotateBillboard(mesh);
+	//rotateBillboard(mesh);
 	rotateBillboard(quad);
-	rotateBillboard(quadij);
+	//rotateBillboard(quadij);
     
     render();
 }
