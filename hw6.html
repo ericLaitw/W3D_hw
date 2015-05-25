@@ -10,21 +10,38 @@
     text-align: center;
     color: #ffff00
 }
+#container {
+    width:100%;
+    float:left;
+    background-color:pink;
+   margin-top: 5px;
+}
+#cnvsFrame {
+    height: 0;
+    padding-bottom:100%;
+}
 body {
-    overflow: hidden;
+    overflow: auto;
 }
 
 </style>
 </head>
 
 <body>
-
+<p align='center' class='fl'>
+	HW6
+</p>
+<hr>
+<div id="container">
+<div id="cnvsFrame">
+    <canvas id="cnvs"> </canvas>
+</div>
+</div>
 
 <script src="js/three.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script src="js/Stats.js"></script>
 <script src="js/Detector.js"></script>
-<script src="js/KeyboardState.js"></script>
 
 
 <script id="myVertexShader" type="x-shader/x-vertex">
@@ -40,8 +57,8 @@ body {
 
     void main() {
         vec4 color = texture2D(texture, vUv);
-        if (color.b > 0.85) discard;
-        else gl_FragColor = vec4(.2, .2, .2, 0.) + color;
+        if (color.b == 1.0) discard;
+        else gl_FragColor = color;
     }
 </script>
 <script type="x-shader/x-fragment" id="fragmentShaderDepth">
@@ -58,7 +75,7 @@ body {
 
     void main() {
         vec4 pixel = texture2D(texture, vUv);
-        if (pixel.b > 0.85) discard;
+        if (pixel.b == 1.0) discard;
         gl_FragData[0] = pack_depth(gl_FragCoord.z);
     }
 </script>
@@ -66,21 +83,33 @@ body {
 <script>
 
 var camera, scene, renderer, light, controls;
-var sceneRTT, rtTexture, monkey, quad, quadij,mesh;
+var sceneRTT, cameraRTT, controlRTT, rtTexture, monkey, quad, quadij, mesh, mesh2;
 var angle = 0;
-var keyboard = new KeyboardState();
 var clock = new THREE.Clock();
-
+var theCanvas, theCanvasFrame;
+//var scene2, camera2, ambientLight2, spotLight2, ground2;
+//var modecheck = false;
 
 init();
 animate();
 
 function init() {
-	// create and start the renderer; choose antialias setting.
-	renderer = new THREE.WebGLRenderer( {antialias:true} );
 
-	renderer.setSize (window.innerWidth, window.innerHeight);
-	document.body.appendChild (renderer.domElement);
+
+	theCanvas = document.getElementById("cnvs");
+    theCanvasFrame = document.getElementById("cnvsFrame");
+
+    renderer = new THREE.WebGLRenderer({
+        canvas: theCanvas,
+        antialias: true
+    });
+
+
+	var ww = theCanvasFrame.clientWidth;
+    var hh = theCanvasFrame.clientHeight;
+
+	renderer.setSize (ww, hh);
+	//document.body.appendChild (renderer.domElement);
 
 	// STATS
 	stats = new Stats();
@@ -89,13 +118,15 @@ function init() {
 	stats.domElement.style.zIndex = 100;
 	document.body.appendChild( stats.domElement );
 
+	//scene2 = new THREE.Scene();
+	
     sceneRTT = new THREE.Scene();
     light = new THREE.PointLight(0xffffff);
     light.position.set(0, 300, 200);
     sceneRTT.add(light);
 
     rtTexture = new THREE.WebGLRenderTarget(
-    window.innerWidth, window.innerHeight, {
+    ww, hh, {
         minFilter: THREE.LinearFilter,
         magFilter: THREE.NearestFilter,
         format: THREE.RGBFormat
@@ -117,9 +148,17 @@ function init() {
 		
 		mesh.parseAnimations();
 
-		mesh.playAnimation('run', 10);
+		mesh.playAnimation('run', 8);
 
 		sceneRTT.add(mesh);
+		
+		/*for (var i = -2; i <= 2; i++)
+		for (var j = -2; j <= 2; j++){
+			mesh2 = mesh.clone();
+			mesh2.position.set(50 * i, 0, 50 * j);
+			mesh2.playAnimation('run', 8);
+			scene2.add(mesh2);
+		}*/
 	});
 	
 	
@@ -141,18 +180,33 @@ function init() {
     /*renderer = new THREE.WebGLRenderer({
         antialias: true
     });
-    renderer.setSize(window.innerWidth, window.innerHeight);*/
+    renderer.setSize(ww, hh);*/
     renderer.setClearColor(0x888888);
 
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+    camera = new THREE.PerspectiveCamera(45, ww / hh, 1, 1000);
     camera.position.y = 80;
     camera.position.z = 400;
     camera.lookAt(new THREE.Vector3(0, 0, 0));
-
+	scene.add(camera);
+	
+	
+	cameraRTT = new THREE.PerspectiveCamera(45, ww / hh, 1, 1000);
+	cameraRTT.position.y = 80;
+	cameraRTT.position.z = 400;
+	sceneRTT.add(cameraRTT);
+	
+	//camera2 = camera.clone();
+	//scene2.add(camera2);
+	
+	controlRTT = new THREE.OrbitControls(cameraRTT, renderer.domElement);
+	
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     var ambientLight = new THREE.AmbientLight(0x555555);
     scene.add(ambientLight);
 
+	//ambientLight2 = ambientLight.clone();
+	//scene2.add(ambientLight2);
+	
     //document.body.appendChild(renderer.domElement);
 
     //////////////////////////////////////////////////
@@ -169,16 +223,13 @@ function init() {
         fragmentShader: document.getElementById('myFragmentShader').textContent
     });
     quad = new THREE.Mesh(plane, rttmaterial);
-    quad.position.set(0, 20, 0);
+    quad.position.set(0, 0, 0);
     //scene.add(quad);
-	quad.rotation.y = Math.PI;
+	//quad.rotation.y = Math.PI;
 	
 	for (var i = -2; i <= 2; i++)
     for (var j = -2; j <= 2; j++) {
         quadij = quad.clone();
-        quadij.position.set(50 * i, 0, 50 * j);
-        scene.add(quadij);
-		quadij.castShadow = true;
 		quadij.customDepthMaterial = new THREE.ShaderMaterial({
         side: THREE.DoubleSide,
         uniforms: {
@@ -190,6 +241,11 @@ function init() {
         vertexShader: document.getElementById('myVertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShaderDepth').textContent
     });
+        quadij.position.set(50 * i, 0, 50 * j);
+		quadij.name="billBoard";
+        scene.add(quadij);
+		quadij.castShadow = true;
+		
     }
 	
     //////////////////////////////////////////////////////////////////////////
@@ -223,27 +279,86 @@ function init() {
     spotLight.shadowCameraFov = spotLight.angle / Math.PI * 180;
     spotLight.exponent = 20;
     scene.add(spotLight);
+	//spotLight2 = spotLight.clone();
+	//scene2.add(spotLight2);
+	
 
     var ground = new THREE.Mesh(
         new THREE.PlaneGeometry(400, 400, 130, 130),
         new THREE.MeshLambertMaterial());
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
+	//ground2 = ground.clone();
+	//scene2.add(ground2);
 	
     ground.receiveShadow = true;
+	//ground2.receiveShadow = true;
+	
+	//modebtn = addEventListener("click", cmode);
+	window.addEventListener('resize', onWindowResize, false);
 
 }
 
+/*function cmode()
+{
+	modecheck = !modecheck;
+}*/
+
+function onWindowResize()
+{
+	var theCanvasFrame = document.getElementById("cnvsFrame");
+	var width= theCanvasFrame.clientWidth, height = theCanvasFrame.clientHeight;
+	camera.aspect = width / height;
+	camera.updateProjectionMatrix();
+	renderer.setSize (width, height);
+}
+
 function animate() {
+	var tmp = 0;
 	stats.update();
     requestAnimationFrame(animate);
 	controls.update();
+	controlRTT.update();
+	
+	scene.traverse(function (mesh){
+			if(mesh instanceof(THREE.Mesh)&& mesh.name=="billBoard"){
+				rotateBillboard(mesh);
+			}
+	});
+	
     /*angle += 0.02;
     if (monkey !== undefined) monkey.rotation.y = angle;*/
 	//rotateBillboard(mesh);
-	rotateBillboard(quad);
 	//rotateBillboard(quadij);
-    
+	//rotateBillboard(quadij);
+    var delta = clock.getDelta();  // in seconds
+
+	//keyboard.update();
+    // render monkey to texture
+	if ( /*keyboard.down("R") && */!inRun) { // yes, must use UPPER CASE
+		startRun = true;
+	}
+	
+	if(mesh != undefined)
+	{
+		if(startRun)
+		{
+			mesh.playAnimation('run', 8);
+			//mesh2.playAnimation('run', 8);
+			inRun = true;
+			startRun = false;
+		}
+		/*if (inRun && mesh.currentKeyframe == mesh.endKeyframe) { // end of jump
+			mesh.playAnimation ('attack', 30);						  // switch to run
+			inRun = false;
+		}*/
+		mesh.updateAnimation(delta * 1000);   // in msecs
+		//mesh2.updateAnimation(delta * 1000);
+	}
+	
+	
+	
+	
     render();
 }
 
@@ -272,38 +387,15 @@ var inRun = false, startRun = false;
 
 
 function render() {
-	var delta = clock.getDelta();  // in seconds
-	controls.update();
-	keyboard.update();
-    // render monkey to texture
-	if ( keyboard.down("R") && !inRun) { // yes, must use UPPER CASE
-		startRun = true;
-	}
-	
-	
-	if(mesh != undefined)
-	{
-		if(startRun)
-		{
-			mesh.playAnimation('run', 2);
-			inRun = true;
-			startRun = false;
-		}
-		if (inRun && mesh.currentKeyframe == mesh.endKeyframe) { // end of jump
-			mesh.playAnimation ('attack', 10);						  // switch to run
-			inRun = false;
-		}
-		mesh.updateAnimation(delta * 1000);   // in msecs
-	}
-	requestAnimationFrame(render);
-
-    renderer.setClearColor(0x0000ff);
-    renderer.render(sceneRTT, camera, rtTexture, true);
-	
-    // render texture to screne
-    renderer.setClearColor(0x888888);
-    renderer.render(scene, camera);
-	
+	/*if(modecheck)
+		renderer.render(scene2, camera2);
+	else{*/
+		renderer.setClearColor(0x0000ff);
+		renderer.render(sceneRTT, cameraRTT, rtTexture, true);
+		
+		renderer.setClearColor(0x888888);
+		renderer.render(scene, camera);
+	//}
 }
 
 </script>
