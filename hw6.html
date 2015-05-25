@@ -87,8 +87,6 @@ var sceneRTT, cameraRTT, controlRTT, rtTexture, monkey, quad, quadij, mesh, mesh
 var angle = 0;
 var clock = new THREE.Clock();
 var theCanvas, theCanvasFrame;
-//var scene2, camera2, ambientLight2, spotLight2, ground2;
-//var modecheck = false;
 
 init();
 animate();
@@ -109,7 +107,6 @@ function init() {
     var hh = theCanvasFrame.clientHeight;
 
 	renderer.setSize (ww, hh);
-	//document.body.appendChild (renderer.domElement);
 
 	// STATS
 	stats = new Stats();
@@ -117,8 +114,6 @@ function init() {
 	stats.domElement.style.top = '0px';
 	stats.domElement.style.zIndex = 100;
 	document.body.appendChild( stats.domElement );
-
-	//scene2 = new THREE.Scene();
 	
     sceneRTT = new THREE.Scene();
     light = new THREE.PointLight(0xffffff);
@@ -144,43 +139,19 @@ function init() {
 
 		mesh = new THREE.MorphAnimMesh(geometry, mat);
 		
-		mesh.rotation.y = Math.PI / 2;
-		
 		mesh.parseAnimations();
 
 		mesh.playAnimation('run', 8);
 
-		sceneRTT.add(mesh);
+		mesh.name="billBoard";
 		
-		/*for (var i = -2; i <= 2; i++)
-		for (var j = -2; j <= 2; j++){
-			mesh2 = mesh.clone();
-			mesh2.position.set(50 * i, 0, 50 * j);
-			mesh2.playAnimation('run', 8);
-			scene2.add(mesh2);
-		}*/
+		sceneRTT.add(mesh);
+
 	});
-	
-	
-	
-    /*var jsonLoader = new THREE.JSONLoader();
-    jsonLoader.load('models/monkey.json', function (geometry) {
-        monkey = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
-			map: THREE.ImageUtils.loadTexture("models/Monkey/brute.jpg"),
-            //color: 0xff1234
-        }));
-        monkey.scale.set(4, 4, 4);
-		monkey.parseAnimations();
-		monkey.playAnimation('run', 10);
-        sceneRTT.add(monkey);
-    });*/
 	
     ///////////////////////////////////////////////////////////////////////////
     scene = new THREE.Scene();
-    /*renderer = new THREE.WebGLRenderer({
-        antialias: true
-    });
-    renderer.setSize(ww, hh);*/
+ 
     renderer.setClearColor(0x888888);
 
     camera = new THREE.PerspectiveCamera(45, ww / hh, 1, 1000);
@@ -195,19 +166,11 @@ function init() {
 	cameraRTT.position.z = 400;
 	sceneRTT.add(cameraRTT);
 	
-	//camera2 = camera.clone();
-	//scene2.add(camera2);
-	
 	controlRTT = new THREE.OrbitControls(cameraRTT, renderer.domElement);
 	
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     var ambientLight = new THREE.AmbientLight(0x555555);
     scene.add(ambientLight);
-
-	//ambientLight2 = ambientLight.clone();
-	//scene2.add(ambientLight2);
-	
-    //document.body.appendChild(renderer.domElement);
 
     //////////////////////////////////////////////////
     var plane = new THREE.PlaneBufferGeometry(150, 150);
@@ -264,9 +227,7 @@ function init() {
         },
         vertexShader: document.getElementById('myVertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShaderDepth').textContent
-    });
-
-   
+    }); 
 	
     spotLight = new THREE.SpotLight(0xffffff, 1);
     spotLight.position.set(0, 300, 300);
@@ -279,30 +240,18 @@ function init() {
     spotLight.shadowCameraFov = spotLight.angle / Math.PI * 180;
     spotLight.exponent = 20;
     scene.add(spotLight);
-	//spotLight2 = spotLight.clone();
-	//scene2.add(spotLight2);
-	
 
     var ground = new THREE.Mesh(
         new THREE.PlaneGeometry(400, 400, 130, 130),
-        new THREE.MeshLambertMaterial());
+        new THREE.MeshLambertMaterial({map: THREE.ImageUtils.loadTexture('images/clearwood.jpg')}));
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
-	//ground2 = ground.clone();
-	//scene2.add(ground2);
-	
+
     ground.receiveShadow = true;
-	//ground2.receiveShadow = true;
-	
-	//modebtn = addEventListener("click", cmode);
+
 	window.addEventListener('resize', onWindowResize, false);
 
 }
-
-/*function cmode()
-{
-	modecheck = !modecheck;
-}*/
 
 function onWindowResize()
 {
@@ -325,17 +274,16 @@ function animate() {
 				rotateBillboard(mesh);
 			}
 	});
+	sceneRTT.traverse(function (mesh){
+			if(mesh instanceof(THREE.Mesh)&& mesh.name=="billBoard"){
+				rotateBillboard2(mesh);
+			}
+	});
 	
-    /*angle += 0.02;
-    if (monkey !== undefined) monkey.rotation.y = angle;*/
-	//rotateBillboard(mesh);
-	//rotateBillboard(quadij);
-	//rotateBillboard(quadij);
     var delta = clock.getDelta();  // in seconds
 
-	//keyboard.update();
     // render monkey to texture
-	if ( /*keyboard.down("R") && */!inRun) { // yes, must use UPPER CASE
+	if (!inRun) { // yes, must use UPPER CASE
 		startRun = true;
 	}
 	
@@ -344,25 +292,37 @@ function animate() {
 		if(startRun)
 		{
 			mesh.playAnimation('run', 8);
-			//mesh2.playAnimation('run', 8);
 			inRun = true;
 			startRun = false;
 		}
-		/*if (inRun && mesh.currentKeyframe == mesh.endKeyframe) { // end of jump
-			mesh.playAnimation ('attack', 30);						  // switch to run
-			inRun = false;
-		}*/
 		mesh.updateAnimation(delta * 1000);   // in msecs
-		//mesh2.updateAnimation(delta * 1000);
 	}
-	
-	
-	
-	
     render();
 }
 
 function rotateBillboard(mesh)
+{
+    var b = mesh.position.clone();  // billboard location
+    var rotaxis = new THREE.Vector3();
+    var v, yhat, n;
+    
+    v = camera.position.clone(); // clone the camera position
+    yhat = new THREE.Vector3(0, 1, 0); // up
+    n = new THREE.Vector3(0, 0, 1); // billboard normal
+
+
+    v.subVectors(v, b); // v-b
+    v.sub(yhat.clone().multiplyScalar(v.dot(yhat)));
+    v.normalize(); // pxz
+
+    rotangle = Math.acos(v.dot(n));
+    rotaxis.crossVectors(n, v);
+    if (rotaxis.dot(yhat) < 0) rotangle *= -1;
+
+    mesh.rotation.y = rotangle;
+}
+
+function rotateBillboard2(mesh)
 {
     var b = mesh.position.clone();  // billboard location
     var rotaxis = new THREE.Vector3();
@@ -380,22 +340,20 @@ function rotateBillboard(mesh)
     rotaxis.crossVectors(n, v);
     if (rotaxis.dot(yhat) < 0) rotangle *= -1;
 
-    mesh.rotation.y = rotangle;
+    mesh.rotation.y = rotangle+1.57;
 }
 
 var inRun = false, startRun = false;
 
 
 function render() {
-	/*if(modecheck)
-		renderer.render(scene2, camera2);
-	else{*/
-		renderer.setClearColor(0x0000ff);
-		renderer.render(sceneRTT, cameraRTT, rtTexture, true);
+
+	renderer.setClearColor(0x0000ff);
+	renderer.render(sceneRTT, cameraRTT, rtTexture, true);
 		
-		renderer.setClearColor(0x888888);
-		renderer.render(scene, camera);
-	//}
+	renderer.setClearColor(0x888888);
+	renderer.render(scene, camera);
+
 }
 
 </script>
