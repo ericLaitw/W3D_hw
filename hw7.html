@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#container {
+    width: 60vw;
+height: 60vw;
+    float:left;
+    background-color:pink;
+   margin-top: 3px;
+}
+#cnvsFrame {
+    height: 0;
+    padding-bottom:100%;
+}
+
+body {
+    overflow: hidden;
+}
+#openselect {
+    background:yellow;
+}
+
+</style>
+</head>
+
+<body>
+<h1 align="center">HW7</h1>
+<hr>
+<div id="container">
+<div id="cnvsFrame">
+    <canvas id="cnvs"> </canvas>
+</div>
+</div>
+<div style="float:right; margin-right: 10px; width:32vw;">
+User Name:
+    <input id="user" style="width:100%" type="text" value="Mickey">
+    <br/>
+    <br/>
+    <button id="login" style="width:100%">Login</button>
+    <p id='greeting'></p>
+	<button id="start" style="width:100%">Start!</button>
+</div>
+<div style="clear:both"></div>
+
+</br>
+<hr>
+<p class='fl'>
+	HOW TO PLAY :
+	<br>
+	1.Click the frame you want to set the texture to.(frame1:middle, frame2:left, frame3:right)
+	<br>
+    2.Click the images to set the texture to the canvas.
+	<br>
+	3.You can save your settings by "Save", reload your settings by "Load", clear your settings by "Clear", checkout which frame by "Which Now", get the text with your settings by "Data save".
+</p>
+
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/OBJLoader.js"></script>
+<script src="js/OBJMTLLoader.js"></script>
+<script src="js/MTLLoader.js"></script>
+<script src="js/filereader.js"></script>
+<script src="fonts/helvetiker_regular.typeface.js"></script>
+<script src="js/threex.text.js"></script>
+
+<script>
+
+var camera, scene, renderer, geometry, material, mesh, controls, geometry2, meshtl, paddletop, paddlebottom, geometryp, materialp, gameover = true , gate = 70, t = 0, hp = 5, reset = false, check = [0,0,0,0,0], time = 0, records = [], uname, nameindex = 0, set = true;
+var pos, vel, pColor;
+var sceneHUD, cameraHUD;
+var mouse = new THREE.Vector2();
+var startBtn, loginBtn;
+var pickables = [], raycaster;
+var clock = new THREE.Clock();
+var puck = [];
+var pointLight;
+var Puck = function(){
+        this.pos = new THREE.Vector3();
+        this.vel = new THREE.Vector3();
+		this.pColor = new THREE.Color();
+        this.mesh = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 2, 20),
+                                   new THREE.MeshBasicMaterial());
+};
+Puck.prototype.update = function(dt){
+		this.pos.add(this.vel.clone().multiplyScalar(dt));
+		this.mesh.position.copy(this.pos);
+};
+Puck.prototype.collision = function(top, bottom, left, right, gate, i){
+    if (this.pos.x > 100) {
+        this.pos.x = 100;
+        this.vel.set(-this.vel.x, 0, this.vel.z);
+		this.pColor.setHSL(Math.random(), Math.random(), Math.random() / 2 + 0.5);
+    } else if (this.pos.x < -100) {
+        this.pos.x = -100;
+        this.vel.set(-this.vel.x, 0, this.vel.z);
+		this.pColor.setHSL(Math.random(), Math.random(), Math.random() / 2 + 0.5);
+    }
+    if (this.pos.z > 100) {
+		if(((this.pos.x > top + 17.5) && (this.pos.x < left - gate/2 - 2.5)) || ((this.pos.x < top - 17.5) && (this.pos.x > right + gate/2 + 2.5)))//miss
+		{
+			scene.remove(this.mesh); 
+			miss(i);
+		}
+		else
+		{
+			this.pos.z = 100;
+			this.vel.set(this.vel.x, 0, -this.vel.z);
+			this.pColor.setHSL(Math.random(), Math.random(), Math.random() / 2 + 0.5);
+		}
+    } else if (this.pos.z < -100) {
+		if(((this.pos.x > bottom + 17.5) && (this.pos.x < left - gate/2 - 2.5)) || ((this.pos.x < bottom - 17.5) && (this.pos.x > right + gate/2 + 2.5)))//miss
+		{ 
+			scene.remove(this.mesh); 
+			miss(i);
+		}
+		else
+		{
+			this.pos.z = -100;
+			this.vel.set(this.vel.x, 0, -this.vel.z);
+			this.pColor.setHSL(Math.random(), Math.random(), Math.random() / 2 + 0.5);
+		}
+	}
+};
+init();
+animate();
+
+/*$("#setValueBtn").click(function(){
+    localStorage.setItem("myVal", set1);
+});
+
+$("#getValueBtn").click(function(){
+    val = localStorage.getItem("myVal");
+	which = 0;
+	tst(1, 0);
+});*/
+
+function initHUD(){
+	sceneHUD = new THREE.Scene();
+    cameraHUD = new THREE.OrthographicCamera(-100, 100, 100, -100, -500, 500);
+    cameraHUD.position.z = 300;
+	/*textTime*/
+	var material = new THREE.MeshBasicMaterial({side:THREE.DoubleSide,color:0xffff00});
+	var textGeom = new THREE.TextGeometry( 'HAVE FUN', {
+	size: 10, height: 1, curveSegments: 5,
+	font: 'helvetiker', weight: 'normal',
+	bevelThickness: 0.1, bevelSize: 0.1, bevelEnabled: true
+	});
+	var textHUD = new THREE.Mesh( textGeom, material );
+	textHUD.position.set(-80,800,0);
+	sceneHUD.add( textHUD );
+	
+}
+
+function init() {
+	
+	startBtn = document.getElementById("start");
+	startBtn.addEventListener("click", start, false);
+	loginBtn = document.getElementById("login");
+	loginBtn.addEventListener("click", login, false);
+	
+    theCanvas = document.getElementById("cnvs");
+    theCanvasFrame = document.getElementById("cnvsFrame");
+
+    renderer = new THREE.WebGLRenderer({
+        canvas: theCanvas,
+        antialias: true
+    });
+    var ww = theCanvasFrame.clientWidth;
+    var hh = theCanvasFrame.clientHeight;
+    renderer.setSize(ww, hh);
+    renderer.setClearColor(0x222222);
+
+    scene = new THREE.Scene();
+	
+	/*///////////////////////////////background
+	sceneBack = new THREE.Scene();
+	cameraBack = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 100);
+    cameraBack.position.z = 5;
+    cameraBack.lookAt(new THREE.Vector3(0, 0, 0));
+
+	var museum = THREE.ImageUtils.loadTexture('images/museum.jpg');
+    var back = new THREE.Mesh(new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshBasicMaterial({
+        map: museum,
+        transparent: true,
+        opacity: 0.85
+    }));
+    back.material.depthTest = false;
+    back.material.depthWrite = false;
+    sceneBack.add(back);
+	////////////////////////////*/
+	
+	
+	
+    camera = new THREE.PerspectiveCamera(50, ww/hh, 1, 10000);
+	camera.position.y = 500;
+    camera.position.z = -750;
+    scene.add(camera);
+	//左右牆
+   geometry = new THREE.BoxGeometry(220, 30, 10);
+    material = new THREE.MeshBasicMaterial({
+        transparent: true,
+        color: 0xff2387,
+        opacity: 0.4
+    });
+	//上下牆
+	geometry2 = new THREE.BoxGeometry(70, 30, 10);
+	//拍子
+	geometryp = new THREE.BoxGeometry(30, 30, 10);
+    materialp = new THREE.MeshBasicMaterial({
+        transparent: true,
+        color: 0xff8723,
+        opacity: 0.4
+    });
+	
+    mesh = new THREE.Mesh(geometry, material);
+	meshtl = new THREE.Mesh(geometry2, material);
+    mesh.position.set(105, 15, 0);
+	mesh.rotation.y = Math.PI / 2;
+    scene.add(mesh);
+    mesh2 = mesh.clone();
+    mesh2.position.set(-105, 15, 0);
+	mesh2.rotation.y = Math.PI / 2;
+    scene.add(mesh2);
+    meshtl.position.set(70, 15, 105);
+    scene.add(meshtl);
+    meshtr = meshtl.clone();
+    meshtr.position.set(-70, 15, 105);
+    scene.add(meshtr);
+	meshbl = meshtl.clone();
+    meshbl.position.set(70, 15, -105);
+    scene.add(meshbl);
+	meshbr = meshtl.clone();
+    meshbr.position.set(-70, 15, -105);
+    scene.add(meshbr);
+	paddletop = new THREE.Mesh(geometryp, materialp);
+	paddletop.position.set(0, 15, 105);
+    scene.add(paddletop);
+	paddlebottom = paddletop.clone();
+	paddlebottom.position.set(0, 15, -105);
+    scene.add(paddlebottom);
+	
+	paddletop.name = "paddletop";
+	paddlebottom.name = "paddlebottom";
+	
+	/*
+    puck = new Puck();
+    puck.pos = new THREE.Vector3(0, 1, 0);
+    puck.vel = new THREE.Vector3(50, 0, 70);
+	puck.pColor = new THREE.Color();
+	puck.pColor.setHSL(Math.random(), Math.random(), Math.random());
+    scene.add(puck.mesh);
+	*/
+	//addPuck();
+	
+    var gridXZ = new THREE.GridHelper(100, 10);
+    gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
+    scene.add(gridXZ);
+   
+    pickables = [gridXZ];	
+	/*pointLight = new THREE.PointLight(puck.pColor.getHex(), 1);
+    scene.add(pointLight);*/
+	
+	var ambientLight = new THREE.AmbientLight (0x111111);
+	scene.add(ambientLight);
+	
+    /*var gridXZ = new THREE.GridHelper(100, 10);
+    gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
+    scene.add(gridXZ);*/
+	//renderer.autoClear = false;
+    
+	var text3D = new THREEx.Text('Game');
+	text3D.scale.multiplyScalar(20);
+	text3D.position.set(0,300,0);
+	text3D.rotation.y = Math.PI;
+	scene.add(text3D);
+	
+	
+	raycaster = new THREE.Raycaster();
+	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+	window.addEventListener('resize', onWindowResize, false);
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+	
+	
+	/*container = document.createElement( 'div' );
+	document.body.appendChild( container );
+	var info = document.createElement( 'div' );
+	info.style.position = 'absolute';
+	info.style.top = '10px';
+	info.style.width = '100%';
+	info.style.textAlign = 'center';
+	info.innerHTML = 'Now Picking: Frame' + tmp;
+	container.appendChild( info );*/
+	
+    // the following is not needed for "embed" mode
+    //document.body.appendChild(renderer.domElement);
+}
+
+
+function onWindowResize()
+{
+	var theCanvasFrame = document.getElementById("cnvsFrame");
+	var width= theCanvasFrame.clientWidth, height = theCanvasFrame.clientHeight;
+	camera.aspect = width / height;
+	camera.updateProjectionMatrix();
+	renderer.setSize (width, height);
+}
+
+
+function onDocumentMouseMove(event) {
+    event.preventDefault();
+	mouse.x = ( event.clientX / theCanvasFrame.clientWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / theCanvasFrame.clientHeight ) * 2 + 1;
+    var vector = new THREE.Vector3( mouse.x, mouse.y, 1 ).unproject( camera );
+	raycaster.set( camera.position, vector.sub( camera.position ).normalize() );
+	var intersects = raycaster.intersectObjects( pickables );
+
+    if ( intersects.length > 0 ) {
+			if(intersects[0].point.x - 15 < meshtr.position.x + gate/2){
+				paddletop.position.x = meshtr.position.x + gate/2 + 15;
+				paddlebottom.position.x = meshtr.position.x + gate/2 + 15;
+			}
+			else if(intersects[0].point.x + 15 > meshtl.position.x - gate/2){
+				paddletop.position.x = meshtl.position.x - gate/2 - 15;
+				paddlebottom.position.x = meshtl.position.x - gate/2 - 15;
+			}			
+			else{
+				paddletop.position.x = intersects[0].point.x; 
+				paddlebottom.position.x = intersects[0].point.x; 
+			}
+	}
+}
+
+function start(){
+	if(gameover)
+	{
+		gameover = false;
+		t = 0;
+		hp = 5;
+		gate = 70;
+		time = 0;
+		puck = [];
+		check = [0,0,0,0,0]
+		addPuck();
+		narrowGate();
+		counttime();
+	}
+	if(reset){
+		reset = false;
+		meshtl.geometry = new THREE.BoxGeometry(70, 30, 10);
+		meshtl.position.set(70, 15, 105);
+		meshtr.geometry = new THREE.BoxGeometry(70, 30, 10);
+		meshtr.position.set(-70, 15, 105);
+		meshbl.geometry = new THREE.BoxGeometry(70, 30, 10);
+		meshbl.position.set(70, 15, -105);
+		meshbr.geometry = new THREE.BoxGeometry(70, 30, 10);
+		meshbr.position.set(-70, 15, -105);
+		paddletop.position.set(0, 15, 105);
+		paddlebottom.position.set(0, 15, -105);
+	}
+}
+
+function addPuck(){
+	var newPuck = new Puck();
+	var x = Math.random() * 100;
+	var z = Math.random() * 100;
+	while(x > 100 || x < 0){
+		x = Math.random() * 100;
+	}
+	while(z > 100 || z < 0){
+		z = Math.random() * 100;
+	}
+	if(!gameover){
+		if(puck.length < 5){
+			newPuck.pos = new THREE.Vector3(x - 50, 0, z - 50);
+			newPuck.vel = new THREE.Vector3(x + 20, 0, z + 20);
+			puck.push(newPuck);
+			scene.add(newPuck.mesh);
+		}
+		setTimeout(addPuck,1000);
+	}
+}
+
+function narrowGate(){
+	if(t > 4)
+	{
+		if(!gameover && gate > 0){
+			meshtl.geometry = new THREE.BoxGeometry(gate - 14, 30, 10);
+			meshtr.geometry = new THREE.BoxGeometry(gate - 14, 30, 10);
+			meshbl.geometry = new THREE.BoxGeometry(gate - 14, 30, 10);
+			meshbr.geometry = new THREE.BoxGeometry(gate - 14, 30, 10);
+			meshtl.position.x += 7;
+			meshtr.position.x -= 7;
+			meshbl.position.x += 7;
+			meshbr.position.x -= 7;
+			gate-=14;	
+			t = 0;
+		}
+	}
+	//debugger;
+	t++;
+	setTimeout(narrowGate,1000);
+	
+}
+
+function miss(i){
+	check[i]++;
+	if(check[i] == 1)
+		hp--;
+	if(hp == 0)
+	{
+		gameover = true;
+		reset = true;
+		score(nameindex);
+		set = false;
+	}
+}
+
+function counttime(){
+	if(!gameover)
+	{
+		time++;
+		setTimeout(counttime,1000);
+	}
+	//else
+		//score(nameindex);
+}
+
+function score(i){
+		if(!set){
+			if(records[i].score >= time)
+				document.getElementById('greeting').innerHTML += "<br/>Your score: " + time;
+			else{
+				saveRecords();
+				document.getElementById('greeting').innerHTML += "<br/>New high score: " + time;
+			}
+			set = true;
+			hp = 5;
+		}
+}
+
+function login(){
+	loadRecords();
+	uname = document.getElementById('user').value;
+
+    var result = searchUser(uname);
+    if (result >= 0) {
+		debugger;
+        document.getElementById('greeting').innerHTML = "Your high score: " + result;
+        //document.getElementById('greeting').innerHTML = name + " is playing";
+		score(nameindex);
+    } else if(result == -1){
+		debugger;
+        document.getElementById('greeting').innerHTML = "Welcome!";
+        //document.getElementById('greeting').innerHTML = name + " is playing";
+		records.push({
+				name: uname,
+				score: 0
+			});
+		var objStr = JSON.stringify(records);
+		localStorage.setItem("scores", objStr);
+		//score(nameindex);
+		nameindex++;
+    }
+    else{
+        document.getElementById('greeting').innerHTML = "Please Enter Your Name!";
+    }
+	
+}
+
+function searchUser(name) {
+    if(name == '')
+        return -2;
+    for (var i = 0; i < records.length; i++) {
+        if (records[i].name === name) {
+			nameindex = i;
+            return records[i].score;
+        }
+    }
+    return -1;
+}
+
+function loadRecords(){
+	var objStr = localStorage.getItem("scores");
+	if(JSON.parse(objStr)!=null){
+		records = JSON.parse(objStr);
+	}
+}
+
+function saveRecords(){
+	if(uname.trim().length==0){
+		return;
+	}
+	for (var i = 0; i < records.length; i++) {
+        if (records[i].name === uname) {
+            records[i].score = time;
+			var objStr = JSON.stringify(records);
+			localStorage.setItem("scores", objStr);
+			return;
+        }
+    }
+	
+	 records.push({
+        name: uname,
+        score: time
+    });
+	var objStr = JSON.stringify(records);
+    localStorage.setItem("scores", objStr);
+}
+
+function animate() {
+    controls.update();
+	var dt = clock.getDelta();
+	
+	for(var i=0;i<puck.length;i++){
+		puck[i].update(dt);
+		puck[i].collision(paddletop.position.x, paddlebottom.position.x, meshtl.position.x, meshtr.position.x, gate, i);
+		//pointLight.position.set(puck[i].pos.x, 10, puck[i].pos.z);
+		//pointLight.color = puck[i].pColor;
+		puck[i].mesh.material.color = puck[i].pColor;
+	}
+		
+    requestAnimationFrame(animate);
+    render();
+}
+
+function render() {
+	/*renderer.clear();
+	renderer.render(sceneBack, cameraBack);
+    */
+	renderer.clear();
+	renderer.render(scene, camera);
+	renderer.render(sceneHUD, cameraHUD);
+}
+
+
+</script>
+</body>
+
+</html>
