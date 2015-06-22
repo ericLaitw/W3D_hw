@@ -15,7 +15,7 @@ height: 60vw;
 }
 
 body {
-    overflow: hidden;
+    overflow: auto;
 }
 #openselect {
     background:yellow;
@@ -64,9 +64,48 @@ User Name:
 <script src="fonts/helvetiker_regular.typeface.js"></script>
 <script src="js/threex.text.js"></script>
 
+<script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+    
+    varying vec2 vUv;
+    
+    uniform float times;
+
+	void main(void)
+	{
+		vec2 position = vUv*2.0;
+		float color = 0.0;
+		int n=2;
+		for (int i = 0; i < 256; i+=2)
+		{
+			float t = float(i)/256.0 - times*0.01;
+			float tri1 = abs(mod(t*8.0+0.25,1.0)-0.5)*2.0-0.5;
+			float tri2 = abs(mod(t*float(n),1.0)-0.5)*8.0-2.0;
+			color += 0.003/distance(-position,vec2(tri2,tri1));
+			color += 0.003/distance(position,vec2(tri1,tri2));
+			
+			
+			n+=int(-times/2.0);	
+			
+			if (n>256)n=-n;
+			
+			 
+		}
+		gl_FragColor = vec4(pow(color,5.0) * vec3(0.0, 0.2, 0.8), 1.0);
+	//wip
+	}
+</script>
+
 <script>
 
-var camera, scene, renderer, geometry, material, mesh, controls, geometry2, meshtl, paddletop, paddlebottom, geometryp, materialp, gameover = true , gate = 70, t = 0, hp = 5, reset = false, check = [0,0,0,0,0], time = 0, records = [], uname, nameindex = 0, set = true;
+var camera, scene, renderer, geometry, material, mesh, controls, geometry2, meshtl, paddletop, paddlebottom, geometryp, materialp, gameover = true , gate = 70, t = 0, hp = 5, reset = false, check = [0,0,0,0,0], time = 0, records = [], uname, nameindex = 0, set = true, meshMaterial;
 var pos, vel, pColor;
 var sceneHUD, cameraHUD;
 var mouse = new THREE.Vector2();
@@ -125,21 +164,11 @@ Puck.prototype.collision = function(top, bottom, left, right, gate, i){
 init();
 animate();
 
-/*$("#setValueBtn").click(function(){
-    localStorage.setItem("myVal", set1);
-});
-
-$("#getValueBtn").click(function(){
-    val = localStorage.getItem("myVal");
-	which = 0;
-	tst(1, 0);
-});*/
-
 function initHUD(){
 	sceneHUD = new THREE.Scene();
     cameraHUD = new THREE.OrthographicCamera(-100, 100, 100, -100, -500, 500);
     cameraHUD.position.z = 300;
-	/*textTime*/
+
 	var material = new THREE.MeshBasicMaterial({side:THREE.DoubleSide,color:0xffff00});
 	var textGeom = new THREE.TextGeometry( 'HAVE FUN', {
 	size: 10, height: 1, curveSegments: 5,
@@ -172,24 +201,6 @@ function init() {
     renderer.setClearColor(0x222222);
 
     scene = new THREE.Scene();
-	
-	/*///////////////////////////////background
-	sceneBack = new THREE.Scene();
-	cameraBack = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 100);
-    cameraBack.position.z = 5;
-    cameraBack.lookAt(new THREE.Vector3(0, 0, 0));
-
-	var museum = THREE.ImageUtils.loadTexture('images/museum.jpg');
-    var back = new THREE.Mesh(new THREE.PlaneGeometry(20, 20),
-    new THREE.MeshBasicMaterial({
-        map: museum,
-        transparent: true,
-        opacity: 0.85
-    }));
-    back.material.depthTest = false;
-    back.material.depthWrite = false;
-    sceneBack.add(back);
-	////////////////////////////*/
 	
 	
 	
@@ -244,31 +255,48 @@ function init() {
 	paddletop.name = "paddletop";
 	paddlebottom.name = "paddlebottom";
 	
-	/*
-    puck = new Puck();
-    puck.pos = new THREE.Vector3(0, 1, 0);
-    puck.vel = new THREE.Vector3(50, 0, 70);
-	puck.pColor = new THREE.Color();
-	puck.pColor.setHSL(Math.random(), Math.random(), Math.random());
-    scene.add(puck.mesh);
-	*/
-	//addPuck();
 	
-    var gridXZ = new THREE.GridHelper(100, 10);
-    gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
-    scene.add(gridXZ);
+    //ground
+	meshMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            times: {
+                type: 'f',
+                value: 1.0
+            }
+        },
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent
+    });
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), meshMaterial);
+    
+    ground.rotation.x = -Math.PI / 2;
+	ground.position.set(0,0,0);
+    scene.add(ground);
    
-    pickables = [gridXZ];	
-	/*pointLight = new THREE.PointLight(puck.pColor.getHex(), 1);
-    scene.add(pointLight);*/
+    pickables = [ground];	
+	
+	//light
+	spotLight = new THREE.SpotLight(0xffffff, 1.5);
+    spotLight.position.set(0, 1000, 0);
+    spotLight.angle = Math.PI / 3;
+
+    spotLight.castShadow = true;
+
+    spotLight.shadowMapWidth = 4096;
+    spotLight.shadowMapHeight = 4096;
+
+    spotLight.shadowCameraNear = 1;
+    spotLight.shadowCameraFar = 4000;
+    spotLight.shadowCameraFov = spotLight.angle / Math.PI * 180;
+
+    spotLight.exponent = 20;
+    spotLight.target = ground;
+    scene.add(spotLight);
+	
+	ground.receiveShadow = true;
 	
 	var ambientLight = new THREE.AmbientLight (0x111111);
 	scene.add(ambientLight);
-	
-    /*var gridXZ = new THREE.GridHelper(100, 10);
-    gridXZ.setColors(new THREE.Color(0xff0000), new THREE.Color(0xffffff));
-    scene.add(gridXZ);*/
-	//renderer.autoClear = false;
     
 	var text3D = new THREEx.Text('Game');
 	text3D.scale.multiplyScalar(20);
@@ -282,19 +310,6 @@ function init() {
 	window.addEventListener('resize', onWindowResize, false);
 	controls = new THREE.OrbitControls(camera, renderer.domElement);
 	
-	
-	/*container = document.createElement( 'div' );
-	document.body.appendChild( container );
-	var info = document.createElement( 'div' );
-	info.style.position = 'absolute';
-	info.style.top = '10px';
-	info.style.width = '100%';
-	info.style.textAlign = 'center';
-	info.innerHTML = 'Now Picking: Frame' + tmp;
-	container.appendChild( info );*/
-	
-    // the following is not needed for "embed" mode
-    //document.body.appendChild(renderer.domElement);
 }
 
 
@@ -377,6 +392,7 @@ function addPuck(){
 			newPuck.vel = new THREE.Vector3(x + 20, 0, z + 20);
 			puck.push(newPuck);
 			scene.add(newPuck.mesh);
+			newPuck.mesh.castShadow = true; 
 		}
 		setTimeout(addPuck,1000);
 	}
@@ -398,7 +414,6 @@ function narrowGate(){
 			t = 0;
 		}
 	}
-	//debugger;
 	t++;
 	setTimeout(narrowGate,1000);
 	
@@ -423,8 +438,6 @@ function counttime(){
 		time++;
 		setTimeout(counttime,1000);
 	}
-	//else
-		//score(nameindex);
 }
 
 function score(i){
@@ -448,19 +461,16 @@ function login(){
     if (result >= 0) {
 		debugger;
         document.getElementById('greeting').innerHTML = "Your high score: " + result;
-        //document.getElementById('greeting').innerHTML = name + " is playing";
 		score(nameindex);
     } else if(result == -1){
 		debugger;
         document.getElementById('greeting').innerHTML = "Welcome!";
-        //document.getElementById('greeting').innerHTML = name + " is playing";
 		records.push({
 				name: uname,
 				score: 0
 			});
 		var objStr = JSON.stringify(records);
 		localStorage.setItem("scores", objStr);
-		//score(nameindex);
 		nameindex++;
     }
     else{
@@ -516,8 +526,6 @@ function animate() {
 	for(var i=0;i<puck.length;i++){
 		puck[i].update(dt);
 		puck[i].collision(paddletop.position.x, paddlebottom.position.x, meshtl.position.x, meshtr.position.x, gate, i);
-		//pointLight.position.set(puck[i].pos.x, 10, puck[i].pos.z);
-		//pointLight.color = puck[i].pColor;
 		puck[i].mesh.material.color = puck[i].pColor;
 	}
 		
@@ -526,9 +534,9 @@ function animate() {
 }
 
 function render() {
-	/*renderer.clear();
-	renderer.render(sceneBack, cameraBack);
-    */
+	
+	var delta = clock.getDelta();
+    meshMaterial.uniforms.times.value += delta * 2;
 	renderer.clear();
 	renderer.render(scene, camera);
 	renderer.render(sceneHUD, cameraHUD);
